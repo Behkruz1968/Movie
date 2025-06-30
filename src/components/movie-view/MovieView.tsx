@@ -49,10 +49,12 @@ const genreMap: Record<number, string> = {
 
 const bannedGenres = new Set(["Romance", "Drama", "History"]);
 
-const MovieView: React.FC<{ data: IMovie[]; onMovieClick?: (id: number) => void }> = ({
-  data,
-  onMovieClick,
-}) => {
+interface MovieViewProps {
+  data: IMovie[];
+  onMovieClick?: (id: number) => void;
+}
+
+const MovieView: React.FC<MovieViewProps> = ({ data, onMovieClick }) => {
   const filteredData = data.filter((movie) => {
     let genres: string[] = [];
     if (Array.isArray(movie.genre_ids)) {
@@ -147,10 +149,8 @@ export default function MoviesPage() {
     <div className="container mx-auto p-4">
       <Swiper
         style={{
-          "--swiper-navigation-color": "#000",
-          "--swiper-pagination-color": "#000",
           height: "320px",
-        } as React.CSSProperties}
+        }}
         spaceBetween={10}
         navigation
         thumbs={{ swiper: thumbsSwiper }}
