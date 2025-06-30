@@ -2,13 +2,14 @@
 import React, { useEffect, useState } from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { FreeMode, Navigation, Thumbs, Autoplay } from "swiper/modules";
+import type { Swiper as SwiperCore } from 'swiper';
 
 import "swiper/css";
 import "swiper/css/free-mode";
 import "swiper/css/navigation";
 import "swiper/css/thumbs";
 
-import MovieDetail from "@/pages/movies/Movidedetail"; // MovieDetail файлингни шу ерда импорт қил
+import MovieDetail from "@/pages/movies/Movidedetail";
 
 const IMAGE_URL = "https://image.tmdb.org/t/p/w500";
 
@@ -114,14 +115,14 @@ const MovieView: React.FC<{ data: IMovie[]; onMovieClick?: (id: number) => void 
 
 export default function MoviesPage() {
   const [movies, setMovies] = useState<IMovie[]>([]);
-  const [thumbsSwiper, setThumbsSwiper] = useState<any>(null);
+  const [thumbsSwiper, setThumbsSwiper] = useState<SwiperCore | null>(null);
   const [selectedMovieId, setSelectedMovieId] = useState<number | null>(null);
 
   useEffect(() => {
     fetch("https://api.themoviedb.org/3/movie/popular?language=en-US&page=1", {
       headers: {
         Authorization:
-          "Bearer eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJlM2U0Y2M0YzA2YzcwN2I0ODcyMWVlY2ZjMjE5MGVmYyIsIm5iZiI6MTcyODg3NzQyNi4yLCJzdWIiOiI2NzBjOTM3MmIxNWQ5N2IxYTkzY2UwZjIiLCJzY29wZXMiOlsiYXBpX3JlYWQiXSwidmVyc2lvbiI6MX0.zZR_akio6SBvGWR4ThRbmrrWDuHZukkom4xo091rw8U",
+          "Bearer <YOUR_API_KEY>",
       },
     })
       .then((res) => res.json())
@@ -191,7 +192,7 @@ export default function MoviesPage() {
 
       <MovieView
         data={movies}
-        onMovieClick={(id) => setSelectedMovieId(id)}
+        onMovieClick={(id: number) => setSelectedMovieId(id)}
       />
 
       {selectedMovieId !== null && (
