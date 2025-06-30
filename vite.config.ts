@@ -1,0 +1,74 @@
+import { type AliasOptions, defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+import tailwindcss from "@tailwindcss/vite";
+import { VitePWA } from "vite-plugin-pwa";
+//@ts-ignore
+import path from "path";
+
+const root = path.resolve(__dirname, "src");
+
+export default defineConfig({
+  plugins: [
+    react(),
+    tailwindcss(),
+    VitePWA({
+      registerType: "autoUpdate", // автообновление воркера
+      manifest: {
+        name: "My Awesome Movies App",
+        short_name: "MoviesApp",
+        start_url: "/",
+        display: "standalone",
+        background_color: "#000000",
+        theme_color: "#e50914",
+        icons: [
+          {
+            src: "icons/icon-192.png",
+            sizes: "192x192",
+            type: "image/png",
+          },
+          {
+            src: "icons/icon-512.png",
+            sizes: "512x512",
+            type: "image/png",
+          },
+        ],
+      },
+      workbox: {
+        // Опционально можно добавить кеширование и правила
+        runtimeCaching: [
+          {
+            urlPattern: ({ request }) => request.destination === 'image',
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'images-cache',
+              expiration: {
+                maxEntries: 50,
+                maxAgeSeconds: 30 * 24 * 60 * 60, // 30 дней
+              },
+            },
+          },
+          {
+            urlPattern: /^https:\/\/api\.themoviedb\.org\//,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'api-cache',
+              networkTimeoutSeconds: 10,
+              expiration: {
+                maxEntries: 30,
+                maxAgeSeconds: 5 * 60, // 5 минут
+              },
+              cacheableResponse: {
+                statuses: [0, 200],
+              },
+            },
+          },
+        ],
+      },
+    }),
+  ],
+  resolve: {
+    alias: {
+      "@": root,
+    } as AliasOptions,
+  },
+});
