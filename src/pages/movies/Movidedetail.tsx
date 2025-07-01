@@ -1,3 +1,4 @@
+// MovieDetail.tsx
 import React, { useEffect, useState } from "react";
 import { IMAGE_URL } from "@/const";
 import { api } from "@/api";
@@ -8,6 +9,13 @@ interface CastMember {
   name: string;
   profile_path: string | null;
   order: number;
+}
+
+interface VideoItem {
+  key: string;
+  type: string;
+  site: string;
+  name: string;
 }
 
 interface MovieCredits {
@@ -29,10 +37,13 @@ interface MovieFullDetail {
   release_date: string;
   vote_average: number;
   genres: Genre[];
-  runtime: number; // фильм узунлиги дақиқада
+  runtime: number;
   homepage: string | null;
-  status: string; // Released, Post Production ва ҳоказо
+  status: string;
   tagline: string | null;
+  videos?: {
+    results: VideoItem[];
+  };
 }
 
 interface MovieDetailProps {
@@ -51,18 +62,18 @@ const MovieDetail: React.FC<MovieDetailProps> = ({ movieId }) => {
       setError(null);
 
       try {
-        // Фильм ҳақида тўлиқ маълумот
-        const movieRes = await api.get<MovieFullDetail>(`movie/${movieId}`, {
-          params: { language: "ru-RU" },
-        });
+        const { data } = await api.get<MovieFullDetail & { credits: MovieCredits }>(
+          `movie/${movieId}`,
+          {
+            params: {
+              language: "ru-RU",
+              append_to_response: "videos,credits",
+            },
+          }
+        );
 
-        // Актёрлар рўйхати
-        const creditsRes = await api.get<MovieCredits>(`movie/${movieId}/credits`, {
-          params: { language: "ru-RU" },
-        });
-
-        setMovie(movieRes.data);
-        setCredits(creditsRes.data);
+        setMovie(data);
+        setCredits(data.credits);
       } catch {
         setError("Не удалось загрузить данные о фильме");
       } finally {
@@ -77,15 +88,15 @@ const MovieDetail: React.FC<MovieDetailProps> = ({ movieId }) => {
   if (error) return <p>{error}</p>;
   if (!movie) return null;
 
-  // Кастни order бўйича саралаш ва 6 тага қисқартириш
-  const mainCast = credits?.cast
-    .sort((a, b) => a.order - b.order)
-    .slice(0, 6) || [];
+  const mainCast = credits?.cast.sort((a, b) => a.order - b.order).slice(0, 6) || [];
+
+  const trailer = movie.videos?.results.find(
+    (v) => v.site === "YouTube" && v.type === "Trailer"
+  );
 
   return (
     <div className="max-w-4xl mx-auto p-4 text-white bg-zinc-900 rounded-lg shadow-lg">
       <div className="flex flex-col md:flex-row gap-6">
-        {/* Постер */}
         <img
           src={movie.poster_path ? IMAGE_URL + movie.poster_path : "/placeholder-poster.png"}
           alt={movie.title}
@@ -132,7 +143,21 @@ const MovieDetail: React.FC<MovieDetailProps> = ({ movieId }) => {
         </div>
       </div>
 
-      {/* Актёры */}
+      {trailer && (
+        <div className="mt-8">
+          <h2 className="text-2xl font-bold mb-4">Трейлер</h2>
+          <div className="aspect-video">
+            <iframe
+              src={`https://www.youtube.com/embed/${trailer.key}`}
+              title="Трейлер фильма"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              className="w-full h-full rounded-lg"
+            ></iframe>
+          </div>
+        </div>
+      )}
+
       <div className="mt-8">
         <h2 className="text-2xl font-bold mb-4">Основные роли</h2>
         <div className="flex gap-6 overflow-x-auto pb-4">
