@@ -17,8 +17,8 @@ export default defineConfig({
     VitePWA({
       registerType: "autoUpdate",
       manifest: {
-        name: "My Awesome Movies App",
-        short_name: "MoviesApp",
+        name: "Movie with DEV",
+        short_name: "Movie",
         start_url: "/",
         display: "standalone",
         background_color: "#000000",
