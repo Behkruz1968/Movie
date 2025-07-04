@@ -1,19 +1,10 @@
-import { type AliasOptions, defineConfig } from "vite";
+import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
-import tailwindcss from "@tailwindcss/vite";
 import { VitePWA } from "vite-plugin-pwa";
-import path from "path";
-import { fileURLToPath } from "url";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-const root = path.resolve(__dirname, "src");
 
 export default defineConfig({
   plugins: [
     react(),
-    tailwindcss(),
     VitePWA({
       registerType: "autoUpdate",
       manifest: {
@@ -45,7 +36,7 @@ export default defineConfig({
               cacheName: "images-cache",
               expiration: {
                 maxEntries: 50,
-                maxAgeSeconds: 30 * 24 * 60 * 60, // 30 кун
+                maxAgeSeconds: 30 * 24 * 60 * 60,
               },
             },
           },
@@ -57,7 +48,7 @@ export default defineConfig({
               networkTimeoutSeconds: 10,
               expiration: {
                 maxEntries: 30,
-                maxAgeSeconds: 5 * 60, // 5 дақиқа
+                maxAgeSeconds: 5 * 60,
               },
               cacheableResponse: {
                 statuses: [0, 200],
@@ -70,7 +61,7 @@ export default defineConfig({
   ],
   resolve: {
     alias: {
-      "@": root,
-    } as AliasOptions,
+      "@": "/src", // path modulidan foydalanmasdan yozildi
+    },
   },
 });
