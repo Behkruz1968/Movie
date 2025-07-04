@@ -13,6 +13,14 @@ const SearchPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [history, setHistory] = useState<string[]>([]);
 
+
+  useEffect(() => {
+    const storedHistory = localStorage.getItem("searchHistory");
+    if (storedHistory) {
+      setHistory(JSON.parse(storedHistory));
+    }
+  }, []);
+
   useEffect(() => {
     if (!query) return;
 
@@ -24,27 +32,36 @@ const SearchPage: React.FC = () => {
         })
         .then((res) => {
           setMovies(res.data.results);
-          setHistory((prev) => [query, ...prev.filter(q => q !== query)].slice(0, 10));
+          const updatedHistory = [query, ...history.filter(q => q !== query)].slice(0, 10);
+          setHistory(updatedHistory);
+          localStorage.setItem("searchHistory", JSON.stringify(updatedHistory));
           setLoading(false);
         })
         .catch(() => {
           setError("Qidiruvda xatolik yuz berdi");
           setLoading(false);
         });
-    }, 2000);
+    }, 500);
 
     return () => clearTimeout(timeout);
   }, [query]);
 
+
+  const removeHistoryItem = (termToRemove: string) => {
+    const updated = history.filter((term) => term !== termToRemove);
+    setHistory(updated);
+    localStorage.setItem("searchHistory", JSON.stringify(updated));
+  };
+
   return (
     <div className="min-h-screen max-w-7xl mx-auto py-16 px-6 text-gray-900 dark:text-white transition-colors">
-      <h1 className="text-4xl font-bold mb-10 text-center">🔍 Kino qidiruvi</h1>
+      <h1 className="text-4xl font-bold mb-10 text-center">Поиск фильма</h1>
 
       <div className="max-w-3xl mx-auto mb-10">
         <Search
-          placeholder="Kino nomini yozing..."
+          placeholder="Найти фильм..."
           onSearch={(val) => setQuery(val)}
-          enterButton="Qidirish"
+          enterButton=" Поиск"
           size="large"
           className="w-full"
           allowClear
@@ -69,7 +86,7 @@ const SearchPage: React.FC = () => {
       {!loading && query && (
         <div>
           <h2 className="text-2xl font-semibold mb-6 text-center">
-            “{query}” bo‘yicha natijalar:
+            результаты поиска: <span className="text-blue-500">{query}</span>
           </h2>
           <div className="grid gap-10 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
             {movies.map((movie) => (
@@ -92,8 +109,8 @@ const SearchPage: React.FC = () => {
                       {movie.overview || "Tavsif mavjud emas..."}
                     </p>
                     <div className="mt-3 text-base text-yellow-500 font-medium">
-                      ★ {movie.vote_average.toFixed(1)} ·{" "}
-                      {movie.release_date?.split("-")[0]}
+                      ★ {movie.vote_average?.toFixed(1) || "0.0"} ·{" "}
+                      {movie.release_date?.split("-")[0] || "Noma'lum"}
                     </div>
                   </div>
                 </div>
@@ -105,16 +122,27 @@ const SearchPage: React.FC = () => {
 
       {!loading && history.length > 0 && (
         <div className="mt-14">
-          <h2 className="text-xl font-semibold mb-4 text-center">📜 Oxirgi qidiruvlar:</h2>
+          <h2 className="text-xl font-semibold mb-4 text-center">
+            Последние поиски:
+          </h2>
           <div className="flex flex-wrap justify-center gap-3">
             {history.map((term, index) => (
-              <span
+              <div
                 key={index}
-                onClick={() => setQuery(term)}
-                className="bg-gray-300 dark:bg-gray-700 hover:bg-gray-400 dark:hover:bg-gray-600 px-4 py-2 rounded-full cursor-pointer text-sm transition"
+                className="flex items-center bg-gray-300 dark:bg-gray-700 hover:bg-gray-400 dark:hover:bg-gray-600 px-4 py-2 rounded-full cursor-pointer text-sm transition relative group"
               >
-                {term}
-              </span>
+                <span onClick={() => setQuery(term)}>{term}</span>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    removeHistoryItem(term);
+                  }}
+                  className="ml-2 text-gray-600 dark:text-gray-300 group-hover:text-red-600 hover:scale-125 transition-transform duration-150"
+                  title="Удалить"
+                >
+                  ×
+                </button>
+              </div>
             ))}
           </div>
         </div>
