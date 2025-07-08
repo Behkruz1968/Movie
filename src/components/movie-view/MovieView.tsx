@@ -1,17 +1,15 @@
-// MoviesPage.tsx
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { FreeMode, Navigation, Thumbs, Autoplay } from "swiper/modules";
-import type { Swiper as SwiperCore } from 'swiper';
+import type { Swiper as SwiperCore } from "swiper";
+import MovieDetail from "@/pages/movies/Movidedetail";
 
 import "swiper/css";
 import "swiper/css/free-mode";
 import "swiper/css/navigation";
 import "swiper/css/thumbs";
 
-import MovieDetail from "@/pages/movies/Movidedetail";
-
-const IMAGE_URL = "https://image.tmdb.org/t/p/w500";
+const IMAGE_URL = "https://image.tmdb.org/t/p/w1280";
 
 interface IMovie {
   backdrop_path: string;
@@ -23,99 +21,20 @@ interface IMovie {
   overview: string;
   genre_ids?: number[];
   genres?: { id: number; name: string }[];
+  original_language: string;
+  adult: boolean;
 }
 
 const genreMap: Record<number, string> = {
-  28: "Action",
-  12: "Adventure",
-  16: "Animation",
-  35: "Comedy",
-  80: "Crime",
-  99: "Documentary",
-  18: "Drama",
-  10751: "Family",
-  14: "Fantasy",
-  36: "History",
-  27: "Horror",
-  10402: "Music",
-  9648: "Mystery",
-  10749: "Romance",
-  878: "Science Fiction",
-  10770: "TV Movie",
-  53: "Thriller",
-  10752: "War",
-  37: "Western",
+  28: "Action", 12: "Adventure", 16: "Animation", 35: "Comedy", 80: "Crime",
+  99: "Documentary", 18: "Drama", 10751: "Family", 14: "Fantasy", 36: "History",
+  27: "Horror", 10402: "Music", 9648: "Mystery", 10749: "Romance",
+  878: "Science Fiction", 10770: "TV Movie", 53: "Thriller", 10752: "War", 37: "Western",
 };
 
 const bannedGenres = new Set(["Romance", "Drama", "History"]);
 
-interface MovieViewProps {
-  data: IMovie[];
-  onMovieClick?: (id: number) => void;
-}
-
-const MovieView: React.FC<MovieViewProps> = ({ data, onMovieClick }) => {
-  const filteredData = data.filter((movie) => {
-    let genres: string[] = [];
-    if (Array.isArray(movie.genre_ids)) {
-      genres = movie.genre_ids.map((id) => genreMap[id]).filter(Boolean);
-    } else if (Array.isArray(movie.genres)) {
-      genres = movie.genres.map((g) => g.name);
-    }
-    return !genres.some((g) => bannedGenres.has(g));
-  });
-
-  return (
-    <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 mt-8">
-      {filteredData.map((movie) => {
-        let genresText = "Janr ma’lumotlari yo‘q";
-        if (Array.isArray(movie.genre_ids) && movie.genre_ids.length > 0) {
-          genresText = movie.genre_ids
-            .map((id) => genreMap[id] || "Noma’lum janr")
-            .join(", ");
-        } else if (Array.isArray(movie.genres) && movie.genres.length > 0) {
-          genresText = movie.genres.map((g) => g.name).join(", ");
-        }
-
-        return (
-          <div
-            key={movie.id}
-            className="group relative cursor-pointer bg-zinc-900 dark:bg-zinc-800 rounded-xl overflow-hidden shadow hover:shadow-xl transition-all duration-300"
-            onClick={() => onMovieClick && onMovieClick(movie.id)}
-          >
-            <img
-              src={IMAGE_URL + movie.poster_path}
-              alt={movie.title}
-              loading="lazy"
-              className="w-96 h-[370px] object-cover group-hover:opacity-90 transition-opacity duration-300"
-            />
-
-            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent p-4 text-white">
-              <h3 className="text-lg font-semibold truncate" title={movie.title}>
-                {movie.title}
-              </h3>
-
-              <div className="flex items-center gap-2 text-sm mt-1 text-yellow-400">
-                ★ {movie.vote_average.toFixed(1)} ·{" "}
-                <span className="text-gray-300">
-                  {movie.release_date ? movie.release_date.split("-")[0] : "----"}
-                </span>
-              </div>
-
-              <div className="mt-1 text-xs text-gray-400">{genresText}</div>
-
-              <p className="line-clamp-2 mt-1 text-sm text-gray-300">
-                {movie.overview || "Tavsif mavjud emas..."}
-              </p>
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-};
-
-export default function MoviesPage() {
+export default function MovieView() {
   const [movies, setMovies] = useState<IMovie[]>([]);
   const [thumbsSwiper, setThumbsSwiper] = useState<SwiperCore | null>(null);
   const [selectedMovieId, setSelectedMovieId] = useState<number | null>(null);
@@ -124,76 +43,107 @@ export default function MoviesPage() {
     fetch("https://api.themoviedb.org/3/movie/popular?language=en-US&page=1", {
       headers: {
         Authorization:
-          "Bearer <YOUR_API_KEY>",
+          "Bearer eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJlM2U0Y2M0YzA2YzcwN2I0ODcyMWVlY2ZjMjE5MGVmYyIsIm5iZiI6MTcyODg3NzQyNi4yLCJzdWIiOiI2NzBjOTM3MmIxNWQ5N2IxYTkzY2UwZjIiLCJzY29wZXMiOlsiYXBpX3JlYWQiXSwidmVyc2lvbiI6MX0.zZR_akio6SBvGWR4ThRbmrrWDuHZukkom4xo091rw8U",
       },
     })
       .then((res) => res.json())
       .then((data) => {
         const filtered = data.results.filter((movie: IMovie) => {
-          let genres: string[] = [];
-          if (Array.isArray(movie.genre_ids)) {
-            genres = movie.genre_ids.map((id) => genreMap[id]).filter(Boolean);
-          } else if (Array.isArray(movie.genres)) {
-            genres = movie.genres.map((g) => g.name);
-          }
+          const genres =
+            movie.genre_ids?.map((id) => genreMap[id]) ||
+            movie.genres?.map((g) => g.name) || [];
           return !genres.some((g) => bannedGenres.has(g));
         });
         setMovies(filtered.slice(0, 8));
       })
-      .catch(() => {
-        setMovies([]);
-      });
+      .catch(() => setMovies([]));
   }, []);
 
   return (
-    <div className="container mx-auto p-4">
+    <div className="container mx-auto px-4 mt-6">
       <Swiper
-        style={{
-          height: "320px",
-        }}
-        spaceBetween={10}
-        navigation
-        thumbs={{ swiper: thumbsSwiper }}
+        spaceBetween={0}
+        centeredSlides
+        autoplay={{ delay: 4000, disableOnInteraction: true }}
+        onSwiper={setThumbsSwiper}
         modules={[FreeMode, Navigation, Thumbs, Autoplay]}
-        autoplay={{ delay: 3000, disableOnInteraction: false }}
-        className="mySwiper2 mb-6"
+        className="mb-6 rounded-xl overflow-hidden"
+        slidesPerView={1}
       >
         {movies.map((movie) => (
-          <SwiperSlide key={movie.id}>
+          <SwiperSlide key={movie.id} className="relative">
             <img
+              className="w-full h-[80vh] object-cover brightness-[.3]"
               src={IMAGE_URL + movie.backdrop_path}
+              loading="lazy"
               alt={movie.title}
-              className="w-full h-[320px] object-cover rounded-lg"
             />
+            <div className="absolute inset-0 flex flex-col items-center justify-end pb-12 text-white text-center bg-gradient-to-t from-black/70 via-black/30 to-transparent">
+              <h1 className="text-3xl sm:text-5xl font-bold drop-shadow-md">{movie.title}</h1>
+              <div className="mt-2 text-sm sm:text-base opacity-80 flex gap-2">
+                <span>{movie.release_date?.slice(0, 4)}</span>
+                <span>•</span>
+                <span>{movie.original_language.toUpperCase()}</span>
+                <span>•</span>
+                <span>{movie.adult ? "18+" : "PG"}</span>
+              </div>
+              <button
+                onClick={() => setSelectedMovieId(movie.id)}
+                className="mt-4 bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-xl font-semibold shadow-lg transition"
+              >
+                Watch Now
+              </button>
+            </div>
           </SwiperSlide>
         ))}
       </Swiper>
 
       <Swiper
-        onSwiper={setThumbsSwiper}
         spaceBetween={10}
-        slidesPerView={4}
         freeMode
         watchSlidesProgress
         modules={[FreeMode, Navigation, Thumbs]}
-        className="mySwiper mb-6"
-        style={{ height: "86px", width: "900px" }}
+        className="mb-8"
+        breakpoints={{
+          0: { slidesPerView: 3 },
+          640: { slidesPerView: 4 },
+          768: { slidesPerView: 6 },
+        }}
       >
         {movies.map((movie) => (
-          <SwiperSlide key={movie.id}>
+          <SwiperSlide key={movie.id} className="cursor-pointer">
             <img
               src={IMAGE_URL + movie.poster_path}
               alt={movie.title}
-              className="w-full h-[80px] object-cover rounded-lg cursor-pointer"
+              className="w-full h-[90px] object-cover rounded-md border border-zinc-700 hover:opacity-90"
             />
           </SwiperSlide>
         ))}
       </Swiper>
 
-      <MovieView
-        data={movies}
-        onMovieClick={(id: number) => setSelectedMovieId(id)}
-      />
+      <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+        {movies.map((movie) => (
+          <div
+            key={movie.id}
+            className="group relative cursor-pointer bg-zinc-900 rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300"
+            onClick={() => setSelectedMovieId(movie.id)}
+          >
+            <img
+              src={IMAGE_URL + movie.backdrop_path}
+              alt={movie.title}
+              loading="lazy"
+              className="w-full h-[360px] object-cover group-hover:scale-105 transition-transform duration-300"
+            />
+            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent p-4 text-white">
+              <h3 className="text-lg font-semibold truncate">{movie.title}</h3>
+              <div className="flex items-center gap-2 text-sm mt-1 text-yellow-400">
+                ★ {movie.vote_average.toFixed(1)} · <span className="text-gray-300">{movie.release_date?.split("-")[0]}</span>
+              </div>
+              <p className="line-clamp-2 mt-1 text-sm text-gray-300">{movie.overview || "Tavsif yo'q"}</p>
+            </div>
+          </div>
+        ))}
+      </div>
 
       {selectedMovieId !== null && (
         <div
@@ -207,7 +157,6 @@ export default function MoviesPage() {
             <button
               onClick={() => setSelectedMovieId(null)}
               className="text-white text-xl mb-2 float-right hover:text-red-500"
-              aria-label="Close modal"
             >
               ×
             </button>

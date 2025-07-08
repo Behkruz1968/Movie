@@ -1,4 +1,11 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { api } from "@/api";
+import {
+  InstagramOutlined,
+  TwitterOutlined,
+  FacebookOutlined,
+} from "@ant-design/icons";
 
 const IMAGE_URL = "https://image.tmdb.org/t/p/w500";
 
@@ -14,113 +21,253 @@ interface Actor {
   profile_path: string | null;
   birthday: string | null;
   place_of_birth: string | null;
+  known_for_department: string;
+  popularity: number;
 }
 
 interface MovieCredit {
   id: number;
   title: string;
   release_date: string;
+  poster_path: string | null;
 }
 
-const API_KEY = "YOUR_API_KEY_HERE"; // Бу ерга калитингни қўй!
+interface TvCredit {
+  id: number;
+  name: string;
+  first_air_date: string;
+  poster_path: string | null;
+}
+
+interface ExternalIds {
+  imdb_id: string | null;
+  instagram_id: string | null;
+  twitter_id: string | null;
+  facebook_id: string | null;
+}
+
+interface ProfileImage {
+  file_path: string;
+}
 
 const ActorDetailModal: React.FC<ActorDetailModalProps> = ({ actorId, onClose }) => {
   const [actor, setActor] = useState<Actor | null>(null);
   const [movies, setMovies] = useState<MovieCredit[]>([]);
+  const [tvShows, setTvShows] = useState<TvCredit[]>([]);
+  const [images, setImages] = useState<ProfileImage[]>([]);
+  const [externalIds, setExternalIds] = useState<ExternalIds | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchActorDetails = async () => {
-      setLoading(true);
-      setError(null);
-
+    const fetchData = async () => {
       try {
-        const [actorRes, creditsRes] = await Promise.all([
-          fetch(`https://api.themoviedb.org/3/person/${actorId}?api_key=${API_KEY}&language=ru-RU`),
-          fetch(`https://api.themoviedb.org/3/person/${actorId}/movie_credits?api_key=${API_KEY}&language=ru-RU`),
+        const [
+          actorRes,
+          movieCreditsRes,
+          tvCreditsRes,
+          externalIdsRes,
+          imagesRes,
+        ] = await Promise.all([
+          api.get<Actor>(`/person/${actorId}?language=ru-RU`),
+          api.get<{ cast: MovieCredit[] }>(`/person/${actorId}/movie_credits?language=ru-RU`),
+          api.get<{ cast: TvCredit[] }>(`/person/${actorId}/tv_credits?language=ru-RU`),
+          api.get<ExternalIds>(`/person/${actorId}/external_ids`),
+          api.get<{ profiles: ProfileImage[] }>(`/person/${actorId}/images`),
         ]);
 
-        if (!actorRes.ok) throw new Error("Ошибка загрузки актёра");
-        if (!creditsRes.ok) throw new Error("Ошибка загрузки фильмов");
+        setActor(actorRes.data);
 
-        const actorData = await actorRes.json();
-        const creditsData = await creditsRes.json();
-
-        setActor(actorData);
         setMovies(
-          creditsData.cast
-            .sort((a: MovieCredit, b: MovieCredit) => {
-              if (!a.release_date) return 1;
-              if (!b.release_date) return -1;
-              return new Date(b.release_date).getTime() - new Date(a.release_date).getTime();
-            })
-            .slice(0, 10) // Охирги 10 фильмни оламиз
+          movieCreditsRes.data.cast
+            .filter((m) => m.release_date)
+            .sort((a, b) => new Date(b.release_date).getTime() - new Date(a.release_date).getTime())
+            .slice(0, 8)
         );
-      } catch (e) {
+
+        setTvShows(
+          tvCreditsRes.data.cast
+            .filter((tv) => tv.first_air_date)
+            .sort((a, b) => new Date(b.first_air_date).getTime() - new Date(a.first_air_date).getTime())
+            .slice(0, 8)
+        );
+
+        setExternalIds(externalIdsRes.data);
+        setImages(imagesRes.data.profiles);
+      } catch {
         setError("Не удалось загрузить данные актёра");
       } finally {
         setLoading(false);
       }
     };
 
-    fetchActorDetails();
+    fetchData();
   }, [actorId]);
 
-  if (loading) return <div className="text-white p-4">Загрузка данных актёра...</div>;
+  if (loading) return <div className="text-white p-4">Загрузка...</div>;
   if (error) return <div className="text-red-500 p-4">{error}</div>;
   if (!actor) return null;
 
   return (
     <div
-      className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-80 backdrop-blur-sm"
       onClick={onClose}
     >
       <div
-        className="bg-zinc-900 p-6 rounded-lg max-w-3xl w-full max-h-[90vh] overflow-auto text-white"
+        className="relative bg-zinc-900 text-white rounded-2xl p-6 w-full max-w-6xl max-h-[90vh] overflow-y-auto shadow-2xl border border-white/10"
         onClick={(e) => e.stopPropagation()}
       >
         <button
           onClick={onClose}
-          className="text-white text-2xl font-bold mb-4 float-right hover:text-red-600"
-          aria-label="Close modal"
+          className="absolute top-4 right-4 text-white text-3xl font-bold hover:text-red-500"
         >
           ×
         </button>
 
-        <div className="flex gap-6">
-          {actor.profile_path ? (
-            <img
-              src={IMAGE_URL + actor.profile_path}
-              alt={actor.name}
-              className="w-40 rounded-lg object-cover"
-              loading="lazy"
-            />
-          ) : (
-            <div className="w-40 h-60 bg-gray-700 rounded-lg flex items-center justify-center text-gray-400">
-              Нет фото
+        {/* Header */}
+        <div className="flex flex-col md:flex-row gap-6">
+          <div className="w-48 h-72 bg-zinc-700 rounded-lg overflow-hidden flex items-center justify-center">
+            {actor.profile_path ? (
+              <img
+                src={IMAGE_URL + actor.profile_path}
+                alt={actor.name}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="text-gray-400 text-lg">Нет фото</div>
+            )}
+          </div>
+
+          <div className="flex-1 space-y-3">
+            <h2 className="text-4xl font-bold">{actor.name}</h2>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm text-gray-300">
+              {actor.birthday && (
+                <p><span className="text-gray-400">🎂 Дата рождения:</span> {actor.birthday}</p>
+              )}
+              {actor.place_of_birth && (
+                <p><span className="text-gray-400">🌍 Место:</span> {actor.place_of_birth}</p>
+              )}
+              <p><span className="text-gray-400">👤 Отрасль:</span> {actor.known_for_department}</p>
+              <p><span className="text-gray-400">🔥 Популярность:</span> {actor.popularity.toFixed(1)}</p>
             </div>
-          )}
 
-          <div className="flex-1">
-            <h2 className="text-3xl font-bold mb-2">{actor.name}</h2>
-            {actor.birthday && <p><b>Дата рождения:</b> {actor.birthday}</p>}
-            {actor.place_of_birth && <p><b>Место рождения:</b> {actor.place_of_birth}</p>}
-
-            <h3 className="mt-4 font-semibold text-xl">Биография</h3>
-            <p className="text-gray-300 whitespace-pre-line max-h-40 overflow-y-auto">{actor.biography || "Биография отсутствует."}</p>
-
-            <h3 className="mt-6 font-semibold text-xl">Последние фильмы</h3>
-            <ul className="list-disc list-inside max-h-48 overflow-y-auto text-gray-300">
-              {movies.length === 0 && <li>Нет информации о фильмах</li>}
-              {movies.map((movie) => (
-                <li key={movie.id}>
-                  {movie.title} ({movie.release_date ? movie.release_date.slice(0, 4) : "----"})
-                </li>
-              ))}
-            </ul>
+            {/* Socials */}
+            {externalIds && (
+              <div className="flex gap-4 mt-2">
+                {externalIds.imdb_id && (
+                  <a href={`https://www.imdb.com/name/${externalIds.imdb_id}`} target="_blank" rel="noopener noreferrer" className="hover:text-yellow-400">IMDb</a>
+                )}
+                {externalIds.instagram_id && (
+                  <a href={`https://instagram.com/${externalIds.instagram_id}`} target="_blank" rel="noopener noreferrer">
+                    <InstagramOutlined className="text-2xl hover:text-pink-500" />
+                  </a>
+                )}
+                {externalIds.twitter_id && (
+                  <a href={`https://twitter.com/${externalIds.twitter_id}`} target="_blank" rel="noopener noreferrer">
+                    <TwitterOutlined className="text-2xl hover:text-blue-400" />
+                  </a>
+                )}
+                {externalIds.facebook_id && (
+                  <a href={`https://facebook.com/${externalIds.facebook_id}`} target="_blank" rel="noopener noreferrer">
+                    <FacebookOutlined className="text-2xl hover:text-blue-600" />
+                  </a>
+                )}
+              </div>
+            )}
           </div>
         </div>
+
+        {/* Biography */}
+        <div className="mt-6">
+          <h3 className="text-xl font-semibold mb-2">Биография</h3>
+          <p className="text-sm text-gray-200 whitespace-pre-line max-h-40 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-700 pr-2">
+            {actor.biography || "Биография отсутствует."}
+          </p>
+        </div>
+
+        {/* Movies */}
+        {movies.length > 0 && (
+          <div className="mt-6">
+            <h3 className="text-xl font-semibold mb-3">Фильмы</h3>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+              {movies.map((movie) => (
+                <div
+                  key={movie.id}
+                  onClick={() => {
+                    onClose();
+                    navigate(`/movie/${movie.id}`);
+                  }}
+                  className="cursor-pointer bg-zinc-800 rounded-lg overflow-hidden hover:shadow-lg transition"
+                >
+                  {movie.poster_path ? (
+                    <img
+                      src={IMAGE_URL + movie.poster_path}
+                      alt={movie.title}
+                      className="w-full h-40 object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-40 bg-gray-700 flex items-center justify-center text-gray-400">
+                      Нет постера
+                    </div>
+                  )}
+                  <div className="p-2 text-sm text-center">
+                    <p className="font-medium line-clamp-2">{movie.title}</p>
+                    <p className="text-xs text-gray-400">{movie.release_date?.slice(0, 4)}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* TV Shows */}
+        {tvShows.length > 0 && (
+          <div className="mt-6">
+            <h3 className="text-xl font-semibold mb-3">Сериалы</h3>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+              {tvShows.map((tv) => (
+                <div
+                  key={tv.id}
+                  className="bg-zinc-800 rounded-lg overflow-hidden hover:shadow-lg transition"
+                >
+                  {tv.poster_path ? (
+                    <img
+                      src={IMAGE_URL + tv.poster_path}
+                      alt={tv.name}
+                      className="w-full h-40 object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-40 bg-gray-700 flex items-center justify-center text-gray-400">
+                      Нет постера
+                    </div>
+                  )}
+                  <div className="p-2 text-sm text-center">
+                    <p className="font-medium line-clamp-2">{tv.name}</p>
+                    <p className="text-xs text-gray-400">{tv.first_air_date?.slice(0, 4)}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Image Gallery */}
+        {images.length > 0 && (
+          <div className="mt-6">
+            <h3 className="text-xl font-semibold mb-3">Фотогалерея</h3>
+            <div className="flex gap-3 overflow-x-auto pb-2">
+              {images.slice(0, 10).map((img, idx) => (
+                <img
+                  key={idx}
+                  src={IMAGE_URL + img.file_path}
+                  alt="actor"
+                  className="h-40 rounded-lg object-cover flex-shrink-0"
+                />
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
