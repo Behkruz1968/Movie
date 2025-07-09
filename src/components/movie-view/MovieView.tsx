@@ -4,10 +4,6 @@ import { FreeMode, Navigation, Thumbs, Autoplay } from "swiper/modules";
 import type { Swiper as SwiperCore } from "swiper";
 import MovieDetail from "@/pages/movies/Movidedetail";
 
-import "swiper/css";
-import "swiper/css/free-mode";
-import "swiper/css/navigation";
-import "swiper/css/thumbs";
 
 const IMAGE_URL = "https://image.tmdb.org/t/p/w1280";
 
