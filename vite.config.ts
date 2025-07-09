@@ -1,13 +1,13 @@
-import { type AliasOptions, defineConfig } from "vite";
+import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { VitePWA } from "vite-plugin-pwa";
 import path from "path";
 import { fileURLToPath } from "url";
 
+// Safely derive __filename and __dirname
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
 const root = path.resolve(__dirname, "src");
 
 export default defineConfig({
@@ -23,14 +23,15 @@ export default defineConfig({
         display: "standalone",
         background_color: "#000000",
         theme_color: "#e50914",
+        scope: "/",
         icons: [
           {
-            src: "icons/icon-192.png",
+            src: "/icons/web-app-manifest-192x192.png",
             sizes: "192x192",
             type: "image/png",
           },
           {
-            src: "icons/icon-512.png",
+            src: "/icons/web-app-manifest-512x512.png",
             sizes: "512x512",
             type: "image/png",
           },
@@ -45,7 +46,7 @@ export default defineConfig({
               cacheName: "images-cache",
               expiration: {
                 maxEntries: 50,
-                maxAgeSeconds: 30 * 24 * 60 * 60, // 30 кун
+                maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days
               },
             },
           },
@@ -57,10 +58,10 @@ export default defineConfig({
               networkTimeoutSeconds: 10,
               expiration: {
                 maxEntries: 30,
-                maxAgeSeconds: 5 * 60, // 5 дақиқа
+                maxAgeSeconds: 5 * 60, // 5 minutes
               },
               cacheableResponse: {
-                statuses: [0, 200],
+                statuses: [200],
               },
             },
           },
@@ -71,6 +72,6 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": root,
-    } as AliasOptions,
+    },
   },
 });

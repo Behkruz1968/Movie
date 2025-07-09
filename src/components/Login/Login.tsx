@@ -139,7 +139,7 @@ export default function LoginPage() {
               emailExists ? "bg-zinc-600 cursor-not-allowed" : ""
             }`}
             required
-            disabled={emailExists} // agar email mavjud bo'lsa, ismni o'zgartirishni taqiqlaymiz
+            disabled={emailExists} 
           />
           {emailExists && (
             <p className="mt-1 text-sm text-yellow-400">
