@@ -4,8 +4,8 @@ import { api } from "@/api";
 import ActorDetailModal from "./ActorDetailModal";
 import { UserOutlined } from "@ant-design/icons";
 import { Swiper, SwiperSlide } from "swiper/react";
-import { Link } from "react-router-dom";
-import "swiper/css";
+import { Link, useParams } from "react-router-dom";
+
 
 interface CastMember {
   cast_id: number;
@@ -61,11 +61,9 @@ interface RecommendedMovie {
   poster_path: string | null;
 }
 
-interface MovieDetailProps {
-  movieId: number;
-}
-
-const MovieDetail: React.FC<MovieDetailProps> = ({ movieId }) => {
+const MovieDetail: React.FC = () => {
+  const { id } = useParams();
+  const movieId = Number(id);
   const [movie, setMovie] = useState<MovieFullDetail | null>(null);
   const [credits, setCredits] = useState<MovieCredits | null>(null);
   const [images, setImages] = useState<string[]>([]);

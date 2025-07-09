@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { FreeMode, Navigation, Thumbs, Autoplay } from "swiper/modules";
 import type { Swiper as SwiperCore } from "swiper";
-import MovieDetail from "@/pages/movies/Movidedetail";
+import { useNavigate } from "react-router-dom";
 
 
 const IMAGE_URL = "https://image.tmdb.org/t/p/w1280";
@@ -33,7 +33,7 @@ const bannedGenres = new Set(["Romance", "Drama", "History"]);
 export default function MovieView() {
   const [movies, setMovies] = useState<IMovie[]>([]);
   const [thumbsSwiper, setThumbsSwiper] = useState<SwiperCore | null>(null);
-  const [selectedMovieId, setSelectedMovieId] = useState<number | null>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetch("https://api.themoviedb.org/3/movie/popular?language=en-US&page=1", {
@@ -61,7 +61,7 @@ export default function MovieView() {
         spaceBetween={0}
         centeredSlides
         autoplay={{ delay: 4000, disableOnInteraction: true }}
-        onSwiper={setThumbsSwiper}
+        thumbs={{ swiper: thumbsSwiper }} // 👍 connect with thumbnails
         modules={[FreeMode, Navigation, Thumbs, Autoplay]}
         className="mb-6 rounded-xl overflow-hidden"
         slidesPerView={1}
@@ -84,7 +84,7 @@ export default function MovieView() {
                 <span>{movie.adult ? "18+" : "PG"}</span>
               </div>
               <button
-                onClick={() => setSelectedMovieId(movie.id)}
+                onClick={() => navigate(`/movie/${movie.id}`)}
                 className="mt-4 bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-xl font-semibold shadow-lg transition"
               >
                 Watch Now
@@ -95,6 +95,7 @@ export default function MovieView() {
       </Swiper>
 
       <Swiper
+        onSwiper={setThumbsSwiper} // 👍 capture thumbnail swiper instance
         spaceBetween={10}
         freeMode
         watchSlidesProgress
@@ -122,7 +123,7 @@ export default function MovieView() {
           <div
             key={movie.id}
             className="group relative cursor-pointer bg-zinc-900 rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300"
-            onClick={() => setSelectedMovieId(movie.id)}
+            onClick={() => navigate(`/movie/${movie.id}`)}
           >
             <img
               src={IMAGE_URL + movie.backdrop_path}
@@ -133,7 +134,8 @@ export default function MovieView() {
             <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent p-4 text-white">
               <h3 className="text-lg font-semibold truncate">{movie.title}</h3>
               <div className="flex items-center gap-2 text-sm mt-1 text-yellow-400">
-                ★ {movie.vote_average.toFixed(1)} · <span className="text-gray-300">{movie.release_date?.split("-")[0]}</span>
+                ★ {movie.vote_average.toFixed(1)} ·{" "}
+                <span className="text-gray-300">{movie.release_date?.split("-")[0]}</span>
               </div>
               <p className="line-clamp-2 mt-1 text-sm text-gray-300">{movie.overview || "Tavsif yo'q"}</p>
             </div>
@@ -141,25 +143,6 @@ export default function MovieView() {
         ))}
       </div>
 
-      {selectedMovieId !== null && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50"
-          onClick={() => setSelectedMovieId(null)}
-        >
-          <div
-            className="bg-zinc-900 rounded-lg max-w-4xl w-full p-4 overflow-auto max-h-[90vh]"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              onClick={() => setSelectedMovieId(null)}
-              className="text-white text-xl mb-2 float-right hover:text-red-500"
-            >
-              ×
-            </button>
-            <MovieDetail movieId={selectedMovieId} />
-          </div>
-        </div>
-      )}
     </div>
   );
 }

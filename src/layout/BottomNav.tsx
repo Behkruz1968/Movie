@@ -13,18 +13,15 @@ interface IUser {
   email: string;
 }
 
-const BottomNav = () => {
+const BottomNav: React.FC = () => {
   const [user, setUser] = useState<IUser | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    } else {
-      setUser(null);
-    }
+    if (storedUser) setUser(JSON.parse(storedUser));
+    else setUser(null);
   }, []);
 
   const items = [
@@ -37,11 +34,8 @@ const BottomNav = () => {
 
   const handleClick = (path: string) => {
     if (path === "/profile") {
-      if (user) {
-        navigate("/profile");
-      } else {
-        navigate("/login");
-      }
+      if (user) navigate("/profile");
+      else navigate("/login");
     } else {
       navigate(path);
     }
@@ -52,13 +46,14 @@ const BottomNav = () => {
       <ul className="flex justify-around items-center h-14">
         {items.map(({ to, icon, label }) => {
           const isActive = location.pathname === to;
-
           return (
             <li key={to}>
               <button
                 onClick={() => handleClick(to)}
                 className={`flex flex-col items-center justify-center text-xs w-full ${
-                  isActive ? "text-red-600" : "text-gray-500 dark:text-gray-300"
+                  isActive
+                    ? "text-red-600"
+                    : "text-gray-500 dark:text-gray-300"
                 }`}
               >
                 <span className="text-xl">{icon}</span>
