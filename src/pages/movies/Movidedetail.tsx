@@ -6,7 +6,7 @@ import { UserOutlined } from "@ant-design/icons";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Link, useParams } from "react-router-dom";
 
-
+// Interfaces
 interface CastMember {
   cast_id: number;
   character: string;
@@ -61,9 +61,15 @@ interface RecommendedMovie {
   poster_path: string | null;
 }
 
-const MovieDetail: React.FC = () => {
+// Add MovieDetailProps to accept movieId prop optionally
+interface MovieDetailProps {
+  movieId?: number;
+}
+
+const MovieDetail: React.FC<MovieDetailProps> = ({ movieId: propMovieId }) => {
   const { id } = useParams();
-  const movieId = Number(id);
+  const movieId = propMovieId ?? Number(id);
+
   const [movie, setMovie] = useState<MovieFullDetail | null>(null);
   const [credits, setCredits] = useState<MovieCredits | null>(null);
   const [images, setImages] = useState<string[]>([]);
